@@ -1,44 +1,3 @@
-# Tratamiento de datos
-# -----------------------------------------------------------------------
-import numpy as np
-import pandas as pd
-from sklearn.impute import KNNImputer
-
-
-def impute_knn(df, tv, n=5):
-    """
-    Imputes missing values in a DataFrame using the K-Nearest Neighbors (KNN) algorithm.
-
-    Parameters:
-    - df (pd.DataFrame): The input DataFrame with missing values.
-    - tv (str): The target variable column name. This column will not be used for imputing if numeric.
-    - n (int): The number of neighbors to consider for imputing missing values. Default is 5.
-
-    Returns:
-    - (pd.DataFrame): A DataFrame with missing values imputed using KNN.
-    """
-
-    # Select numeric variables
-    df_num = df.select_dtypes(include=np.number)
-
-    if tv in df_num.columns:
-        df_num = df_num.drop(columns=[tv])
-
-    # KNN algorithm for imputing
-    imputer_knn = KNNImputer(n_neighbors=n)
-    knn_imputed = imputer_knn.fit_transform(df_num)
-    df_imputed = pd.DataFrame(knn_imputed, columns=df_num.columns, index=df.index)
-
-    # Restore target variable, if it was numeric
-    if tv in df.columns and tv not in df_imputed.columns:
-        df_imputed[tv] = df[tv]
-
-    df_knn = df.copy()
-    df_knn.update(df_imputed)
-
-    return df_knn
-
-
 # Data Treatment
 # -----------------------------------------------------------------------
 import numpy as np
@@ -49,6 +8,54 @@ import pandas as pd
 from sklearn.experimental import enable_iterative_imputer
 from sklearn.impute import IterativeImputer
 from sklearn.impute import KNNImputer
+
+from sklearn.ensemble import IsolationForest
+from sklearn.neighbors import LocalOutlierFactor
+
+
+
+def find_outliers(dataframe, cols, method="lof", random_state=42, n_est=100, contamination=0.01, n_neigh=20): 
+    """
+    Identifies outliers in a given dataset using Isolation Forest or Local Outlier Factor methods.
+
+    Parameters:
+    - dataframe (pd.DataFrame): The input dataframe containing the data to analyze.
+    - cols (list): List of column names to be used for outlier detection.
+    - method (str, optional): The method to use for detecting outliers. Options are "ifo" (Isolation Forest) or "lof" (Local Outlier Factor). Defaults to "lof".
+    - random_state (int, optional): Random seed for reproducibility when using Isolation Forest. Defaults to 42.
+    - n_est (int, optional): Number of estimators for the Isolation Forest model. Defaults to 100.
+    - contamination (float, optional): The proportion of outliers in the dataset. Defaults to 0.01.
+    - n_neigh (int, optional): Number of neighbors for the Local Outlier Factor model. Defaults to 20.
+
+    Returns:
+    - (tuple): A tuple containing:
+    - pd.DataFrame: The original dataframe with an added column 'outlier' indicating the outlier status (-1 for outliers, 1 for inliers).
+    - object: The trained model used for outlier detection.
+
+    Recommendations:
+    - `n_estimators` (Isolation Forest): `100-300`. More trees improve accuracy, rarely needed >500.
+    - `contamination`: `0.01-0.1`. Adjust based on expected anomalies (higher if >10% anomalies).
+    - `n_neighbors` (LOF): `10-50`. Low for local anomalies, high for large/noisy datasets.
+    """
+
+
+    df = dataframe.copy()
+
+    if method == "ifo":  
+        model = IsolationForest(random_state=random_state, n_estimators=n_est, contamination=contamination, n_jobs=-1)
+        outliers = model.fit_predict(X=df[cols])
+
+    elif method == "lof":
+        model = LocalOutlierFactor(n_neighbors=n_neigh, contamination=contamination, n_jobs=-1)
+        outliers = model.fit_predict(X=df[cols])
+
+    else:
+        raise ValueError("Unrecognized method. Use 'ifo', or 'lof'.")
+    
+    df = pd.concat([df, pd.DataFrame(outliers, columns=['outlier'])], axis=1)
+
+    return df, model
+
 
 
 class MissingValuesHandler:
@@ -90,17 +97,17 @@ class MissingValuesHandler:
 
     def select_missing_values_columns(self):
         """
-        Selects columns with missing values that are of numeric data type.
+        Select columns with missing values that are of numeric data type.
 
         Returns:
-        - (pandas.Index): An index object containing the names of numeric columns with missing values.
+        - (list): A list of column names containing numeric data with missing values.
         """
         filter_missing_values = self.dataframe.columns[self.dataframe.isna().any()]
         cols = self.dataframe[filter_missing_values].select_dtypes(include=np.number).columns
-        return cols
+        return cols.to_list()
 
 
-    def use_knn(self, list_columns=None, n=5):
+    def use_knn(self, list_columns=None, n=5, leave_names=False):
         """
         Imputes missing values in the specified columns using the K-Nearest Neighbors (KNN) algorithm.
 
@@ -117,9 +124,13 @@ class MissingValuesHandler:
         imputer = KNNImputer(n_neighbors= n)
         imputed = imputer.fit_transform(self.dataframe[list_columns])
 
-        new_columns = [col + "_knn" for col in list_columns]
-        self.dataframe[new_columns] = imputed
+        if leave_names:
+            new_columns = [col for col in list_columns]
 
+        else:
+            new_columns = [col + "_knn" for col in list_columns]
+
+        self.dataframe[new_columns] = imputed
         return self.dataframe
     
 

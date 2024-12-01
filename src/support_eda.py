@@ -13,6 +13,24 @@ import seaborn as sns
 import math
 
 
+def checker(df, col):
+    """
+    Provides summary statistics and insights about a specific column in a DataFrame.
+
+    Parameters:
+    - df (pd.DataFrame): The input DataFrame to analyze.
+    - col (str): The name of the column to check.
+
+    Returns:
+    - None: The function prints the summary statistics directly.
+    """
+
+    print(f"Number of entries: {df.shape[0]}.")
+    print(f"Number of {col} distinct entries: {df[col].nunique()}.")
+    print(f"Number of {col} duplicated: {df[col].duplicated().sum()}.")
+    print(f"Number of {col} null: {df[col].isna().sum()}.")
+
+
 def plot_numeric_distribution(df, first, last, col, n=1, size = (10, 5), rotation=45):
     """
     Plots the distribution of numeric values in a specified column within a given range, using aligned bins.
@@ -306,12 +324,24 @@ def plot_groupby(df, groupby, col, max_entries, size=(12, 6), palette='mako', me
     plt.title(f'{col} median per {groupby}')
     plt.xlabel('')
     plt.ylabel('')
-    plt.tight_layout()
 
+    plt.tight_layout()
     plt.show()
 
 
 def plot_relation_tv(df, tv, size=(40, 40), n_cols = 2):
+    """
+    Plots the relationship of each column in the DataFrame with a target variable using histograms and count plots.
+
+    Parameters:
+    - df (pd.DataFrame): The input DataFrame containing the data to be visualized.
+    - tv (str): The name of the target variable column to analyze relationships with.
+    - size (tuple, optional): The size of the overall figure. Default is (40, 40).
+    - n_cols (int, optional): The number of columns in the subplot grid. Default is 2.
+
+    Returns:
+    - None: The function directly displays the plots.
+    """
 
     num_cols = df.select_dtypes(include=np.number).columns
     cat_cols = df.select_dtypes(include=['O', 'category']).columns

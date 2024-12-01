@@ -13,6 +13,42 @@ warnings.filterwarnings("ignore")
 from sklearn.preprocessing import OneHotEncoder, OrdinalEncoder
 from category_encoders import TargetEncoder
 
+from scipy.stats import chi2_contingency
+
+
+
+def chi2_test(df,  categories, target_variable, alpha = 0.05, show=False):
+    """
+    Performs a chi-squared test of independence for multiple categorical variables against a target variable.
+
+    Parameters:
+    - categories (list): A list of categorical variable names to test.
+    - target_variable (str): The name of the target variable for the chi-squared test.
+    - alpha (float, optional): The significance level for the test. Default is 0.05.
+    - show(bool, optional): Whether to display in a Jupyter Notebook environment or not. Default is False.
+
+    Returns:
+    - None: Prints results of the chi-squared test and displays contingency tables and expected frequencies.
+    """
+
+    for category in categories:
+
+        print(f"We are evaluating the variable {category.upper()}")
+        df_crosstab = pd.crosstab(df[category], df[target_variable])
+
+        if show:
+            display(df_crosstab)
+
+        chi2, p, dof, expected = chi2_contingency(df_crosstab)
+
+        if p < alpha:
+            print(f"For the category {category.upper()} there are significant differences, p = {p:.4f}")
+            if show:    
+                display(pd.DataFrame(expected, index=df_crosstab.index, columns=df_crosstab.columns).round())
+        else:
+            print(f"For the category {category.upper()} there are NO significant differences, p = {p:.4f}\n")
+        print("--------------------------")
+
 
 class Encoding:
     """
