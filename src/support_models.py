@@ -35,7 +35,33 @@ import psutil
 from sklearn.model_selection import StratifiedKFold, cross_val_score, KFold
 from sklearn.preprocessing import KBinsDiscretizer
 
+def rows_colors_model(row):
+    """
+    Applies custom styling to rows in a DataFrame based on the value of the 'model' column.
 
+    Parameters:
+    - row (pd.Series): A row of the DataFrame being styled.
+
+    Returns:
+    - list: A list of CSS style strings for each cell in the row.
+    """
+
+    model_colors = {
+        'tree': 'background-color: lightblue; color: black',
+        'logistic_regression': 'background-color: lightgreen; color: black',
+        'random_forest': 'background-color: lightyellow; color: black',
+        'gradient_boosting': 'background-color: lightcoral; color: black',
+        'xgboost': 'background-color: lightpink; color: black'
+    }
+    
+    # Get the current row model
+    model = row['model']
+    
+    # Return the styles
+    if model in model_colors:
+        return [model_colors[model]] * len(row)
+    else:
+        return ['background-color: white; color: black'] * len(row)
 
 
 class ClassificationModels:
