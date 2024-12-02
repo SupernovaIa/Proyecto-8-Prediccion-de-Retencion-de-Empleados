@@ -1,8 +1,11 @@
-import pandas as pd
-import numpy as np
+# Data processing  
+# -----------------------------------------------------------------------  
+import pandas as pd  
+import numpy as np  
 
-
-from sklearn.preprocessing import MinMaxScaler, RobustScaler, StandardScaler
+# Data scaling and preprocessing  
+# -----------------------------------------------------------------------  
+from sklearn.preprocessing import MinMaxScaler, RobustScaler, StandardScaler  
 
 
 def scale_df(df, cols, method="robust", include_others=False):

@@ -8,10 +8,8 @@ import pandas as pd
 from sklearn.experimental import enable_iterative_imputer
 from sklearn.impute import IterativeImputer
 from sklearn.impute import KNNImputer
-
 from sklearn.ensemble import IsolationForest
 from sklearn.neighbors import LocalOutlierFactor
-
 
 
 def find_outliers(dataframe, cols, method="lof", random_state=42, n_est=100, contamination=0.01, n_neigh=20): 

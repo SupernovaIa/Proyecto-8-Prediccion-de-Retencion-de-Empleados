@@ -1,20 +1,18 @@
-# Tratamiento de datos
-# -----------------------------------------------------------------------
-import pandas as pd
-import numpy as np
+# Data processing  
+# -----------------------------------------------------------------------  
+import pandas as pd  
+import numpy as np  
 
-# Visualizaciones
-# -----------------------------------------------------------------------
-import seaborn as sns
-import matplotlib.pyplot as plt
+# Visualization  
+# -----------------------------------------------------------------------  
+import seaborn as sns  
+import matplotlib.pyplot as plt  
 
-# Para realizar la clasificación y la evaluación del modelo
-# -----------------------------------------------------------------------
-from sklearn.linear_model import LogisticRegression
-from sklearn.tree import DecisionTreeClassifier
-from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, cohen_kappa_score, roc_auc_score, confusion_matrix, roc_curve
-from sklearn.model_selection import train_test_split, GridSearchCV
+# Model training and evaluation  
+# -----------------------------------------------------------------------  
+from sklearn.linear_model import LogisticRegression  
+from sklearn.tree import DecisionTreeClassifier  
+from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier  
 from sklearn.metrics import (
     accuracy_score,
     precision_score,
@@ -22,14 +20,18 @@ from sklearn.metrics import (
     f1_score,
     roc_auc_score,
     cohen_kappa_score,
-    confusion_matrix
+    confusion_matrix,
+    roc_curve
 )
-import xgboost as xgb
-import pickle
-import shap
-import time
-import psutil
+from sklearn.model_selection import train_test_split, GridSearchCV  
+import xgboost as xgb  
 
+# Utility modules  
+# -----------------------------------------------------------------------  
+import pickle  
+import shap  
+import time  
+import psutil  
 
 
 def rows_colors_model(row):
