@@ -7,14 +7,14 @@ import numpy as np
 # -----------------------------------------------------------------------
 import seaborn as sns
 import matplotlib.pyplot as plt
-from sklearn import tree
 
 # Para realizar la clasificación y la evaluación del modelo
 # -----------------------------------------------------------------------
 from sklearn.linear_model import LogisticRegression
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
-from sklearn.model_selection import train_test_split, learning_curve, GridSearchCV, cross_val_score, StratifiedKFold, KFold
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, cohen_kappa_score, roc_auc_score, confusion_matrix, roc_curve
+from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.metrics import (
     accuracy_score,
     precision_score,
@@ -30,10 +30,7 @@ import shap
 import time
 import psutil
 
-# Para realizar cross validation
-# -----------------------------------------------------------------------
-from sklearn.model_selection import StratifiedKFold, cross_val_score, KFold
-from sklearn.preprocessing import KBinsDiscretizer
+
 
 def rows_colors_model(row):
     """
@@ -219,10 +216,10 @@ class ClassificationModels:
         model = self.results[model_name]["best_model"]
 
         if hasattr(model, "predict_proba"):
-            prob_train = model.predict_proba(self.X_train)[:, 1]
-            prob_test = model.predict_proba(self.X_test)[:, 1]
+            self.results[model_name]["prob_train"] = model.predict_proba(self.X_train)[:, 1]
+            self.results[model_name]["prob_test"] = model.predict_proba(self.X_test)[:, 1]
         else:
-            prob_train = prob_test = None
+            self.results[model_name]["prob_train"] = self.results[model_name]["prob_test"] = None
 
         num_cores = getattr(model, "n_jobs", psutil.cpu_count(logical=True))
 
@@ -233,7 +230,7 @@ class ClassificationModels:
             "recall": recall_score(self.y_train, pred_train, average='weighted', zero_division=0),
             "f1": f1_score(self.y_train, pred_train, average='weighted', zero_division=0),
             "kappa": cohen_kappa_score(self.y_train, pred_train),
-            "auc": roc_auc_score(self.y_train, prob_train) if prob_train is not None else None,
+            "auc": roc_auc_score(self.y_train, self.results[model_name]["prob_train"]) if self.results[model_name]["prob_train"] is not None else None,
             "time_seconds": self.results[model_name]["time"],
             "cores": num_cores
         }
@@ -245,7 +242,7 @@ class ClassificationModels:
             "recall": recall_score(self.y_test, pred_test, average='weighted', zero_division=0),
             "f1": f1_score(self.y_test, pred_test, average='weighted', zero_division=0),
             "kappa": cohen_kappa_score(self.y_test, pred_test),
-            "auc": roc_auc_score(self.y_test, prob_test) if prob_test is not None else None,
+            "auc": roc_auc_score(self.y_test, self.results[model_name]["prob_test"]) if self.results[model_name]["prob_test"] is not None else None,
             "time_seconds": self.results[model_name]["time"],
             "cores": num_cores
         }
@@ -386,4 +383,32 @@ class ClassificationModels:
 
         # Generate summary plot
         shap.summary_plot(shap_values, self.X_test, feature_names=self.X.columns)
-        
+
+
+    def plot_roc_curve(self, model_name):
+        """
+        Plots the ROC curve for a specified model, comparing its performance to a random classifier and a perfect classifier.
+
+        Parameters:
+        - model_name (str): The name of the model for which the ROC curve will be plotted. It must match a key in `self.results`.
+
+        Returns:
+        - None: The function directly displays the ROC curve plot.
+        """
+
+        fpr, tpr, thresholds =  roc_curve(self.y_test, self.results[model_name]["prob_test"])
+    
+        plt.figure(figsize=(6,4))
+
+        sns.lineplot(x = fpr, y = tpr, color = "deepskyblue", label = "ROC Curve")
+
+        plt.fill_between(fpr, tpr, color = "deepskyblue", alpha = 0.2, interpolate=False, label = f'AUC : {self.get_metrics(model_name).loc['test']['auc']:.3f}')
+        plt.plot([0,1],[0,1], color = "red", ls = "--", label = "Random Classifier")
+        plt.plot([0,0,1], [0,1,1], color = "darkorange", lw = 1.5, label = "Perfect Classifier")
+
+        plt.xlabel("False Positive Ratio")
+        plt.ylabel("True Positive Ratio")
+        plt.grid(ls = "--", lw = 0.6, alpha = 0.6)
+        plt.title("ROC Curve")
+        plt.legend()
+        plt.show()
